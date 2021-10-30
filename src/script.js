@@ -45,8 +45,8 @@ window.addEventListener('resize', () =>
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
 camera.position.x = 1
-camera.position.y = 1
-camera.position.z = 1
+camera.position.y = 2
+camera.position.z = 5
 scene.add(camera)
 
 // Controls
@@ -56,6 +56,7 @@ controls.enableDamping = true
 /**
  * Objects
  */
+// Ground plane
 {
     const planeSize = 40
     const texture = loader.load("/checkerboard.png")
@@ -72,8 +73,40 @@ controls.enableDamping = true
     })
     planeMat.color.setRGB(1.5, 1.5, 1.5)
     const mesh = new THREE.Mesh(planeGeo, planeMat)
-    mesh.rotation.x = Math.PI * -0.5
+    mesh.rotation.x = Math.PI * -.5
     scene.add(mesh)
+}
+
+// Sphere w/shadows
+const shadowTexture = loader.load("/roundshadow.png")
+const sphereShadowBase = []
+{
+    const sphereRadius = 1
+    const sphereWidthDivisions = 32
+    const sphereHeightDivisions = 16
+    const sphereGeo = new THREE.SphereGeometry(sphereRadius, sphereWidthDivisions, sphereHeightDivisions)
+
+    // Shadow plane geo
+    const planeSize = 1
+    const shadowGeo = new THREE.PlaneGeometry(planeSize, planeSize)
+
+    const numSpheres = 6
+    for (let i = 0; i < numSpheres; i++) {
+        const base = new THREE.Object3D()
+        scene.add(base)
+
+        const shadowMat = new THREE.MeshBasicMaterial({
+            map: shadowTexture,
+            transparent: true,
+            depthWrite: false,
+        })
+        const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat)
+        shadowMesh.position.y = 0.001
+        shadowMesh.rotation.x = Math.PI * -.5
+        const shadowSize = sphereRadius * 4
+        shadowMesh.scale.set(shadowSize, shadowSize, shadowSize)
+        base.add(shadowMesh)
+    }
 }
 
 /**
