@@ -45,7 +45,7 @@ window.addEventListener('resize', () => {
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
 camera.position.x = 1
 camera.position.y = 6
-camera.position.z = -5
+camera.position.z = -10
 scene.add(camera)
 
 // Controls
@@ -57,7 +57,7 @@ controls.enableDamping = true
  */
 // Ground plane
 {
-    const planeSize = 40
+    const planeSize = 20
     const texture = loader.load("/checkerboard.png")
     texture.wrapS = THREE.RepeatWrapping
     texture.wrapT = THREE.RepeatWrapping
@@ -80,7 +80,7 @@ controls.enableDamping = true
 const shadowTexture = loader.load("/roundshadow.png")
 const sphereShadowBases = []
 {
-    const sphereRadius = .5
+    const sphereRadius = .75
     const sphereWidthDivisions = 32
     const sphereHeightDivisions = 16
     const sphereGeo = new THREE.SphereGeometry(sphereRadius, sphereWidthDivisions, sphereHeightDivisions)
@@ -108,7 +108,11 @@ const sphereShadowBases = []
 
         const u = i / numSpheres
         console.log(u)
-        const sphereMat = new THREE.MeshPhongMaterial()
+        const sphereMat = new THREE.MeshStandardMaterial()
+        const normalMap = loader.load("/5689d0a9cef193cefd363cf7c23e3dac.png")
+        sphereMat.normalMap = normalMap
+        sphereMat.roughness = .1
+        sphereMat.metalness = .4
         sphereMat.color.setHSL(u, 1, .75)
         const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat)
         sphereMesh.position.set(0, sphereRadius + 2, 0)
@@ -117,7 +121,7 @@ const sphereShadowBases = []
         sphereShadowBases.push({ base, sphereMesh, shadowMesh, y: sphereMesh.position.y })
     }
 }
-console.log(sphereShadowBases)
+console.log(sphereShadowBases[0].sphereMesh)
 
 /**
  * Renderer
@@ -136,8 +140,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 // Hemi Light
 {
     const skyColor = 0xB1E1FF;
-    const groundColor = 0xB97A20;
-    const intensity = .8;
+    const groundColor = 0x8c8c8c;
+    const intensity = 1;
     const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
     scene.add(light);
 }
@@ -167,12 +171,21 @@ const tick = () => {
         const { base, sphereMesh, shadowMesh, y } = sphereShadowBase
 
         const u = ndx / sphereShadowBases.length;
-        
+
         const speed = elapsedTime * 0.2
         const angle = speed + u * Math.PI * 2 * (ndx % 1 ? 1 : -1)
-        const radius = Math.sin(speed - ndx * 110)
-        console.log(radius)
+        const radius = Math.sin(speed - ndx) * 10
+        // console.log(radius)
         base.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius)
+
+        const yOff = Math.abs(Math.sin(elapsedTime * 2 + ndx)) * 1.1
+
+        sphereMesh.position.y = y + THREE.MathUtils.lerp(-2, 2, yOff)
+        shadowMesh.material.opacity = THREE.MathUtils.lerp(1, .1, yOff)
+        sphereMesh.material.color.setHSL(angle, .75, .5)
+        sphereMesh.rotation.x = yOff / 2 
+        // sphereMesh.rotation.z += yOff / 10
+        sphereMesh.rotation.y = yOff / 1.2
     })
 
     // Update controls
@@ -184,5 +197,6 @@ const tick = () => {
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
 }
+
 
 tick()
