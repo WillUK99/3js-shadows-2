@@ -3,6 +3,11 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 /**
+ * Loader
+ */
+const loader = new THREE.TextureLoader()
+
+/**
  * Base
  */
 // Canvas
@@ -49,13 +54,27 @@ const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
 /**
- * Cube
+ * Objects
  */
-const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
-)
-scene.add(cube)
+{
+    const planeSize = 40
+    const texture = loader.load("/checkerboard.png")
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.magFilter = THREE.NearestFilter
+    const repeats = planeSize / 2
+    texture.repeat.set(repeats, repeats)
+
+    const planeGeo = new THREE.PlaneGeometry(planeSize, planeSize)
+    const planeMat = new THREE.MeshBasicMaterial({
+        map: texture,
+        side: THREE.DoubleSide
+    })
+    planeMat.color.setRGB(1.5, 1.5, 1.5)
+    const mesh = new THREE.Mesh(planeGeo, planeMat)
+    mesh.rotation.x = Math.PI * -0.5
+    scene.add(mesh)
+}
 
 /**
  * Renderer
@@ -66,6 +85,14 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+
+/**
+ * Lighting
+ */
+{
+    scene.add(new THREE.DirectionalLight(0xccc, 1))
+}
 
 /**
  * Animate
