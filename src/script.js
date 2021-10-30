@@ -24,8 +24,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -45,8 +44,8 @@ window.addEventListener('resize', () =>
 // Base camera
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
 camera.position.x = 1
-camera.position.y = 2
-camera.position.z = 5
+camera.position.y = 6
+camera.position.z = -5
 scene.add(camera)
 
 // Controls
@@ -79,9 +78,9 @@ controls.enableDamping = true
 
 // Sphere w/shadows
 const shadowTexture = loader.load("/roundshadow.png")
-const sphereShadowBase = []
+const sphereShadowBases = []
 {
-    const sphereRadius = 1
+    const sphereRadius = .5
     const sphereWidthDivisions = 32
     const sphereHeightDivisions = 16
     const sphereGeo = new THREE.SphereGeometry(sphereRadius, sphereWidthDivisions, sphereHeightDivisions)
@@ -90,7 +89,7 @@ const sphereShadowBase = []
     const planeSize = 1
     const shadowGeo = new THREE.PlaneGeometry(planeSize, planeSize)
 
-    const numSpheres = 6
+    const numSpheres = 10
     for (let i = 0; i < numSpheres; i++) {
         const base = new THREE.Object3D()
         scene.add(base)
@@ -106,8 +105,19 @@ const sphereShadowBase = []
         const shadowSize = sphereRadius * 4
         shadowMesh.scale.set(shadowSize, shadowSize, shadowSize)
         base.add(shadowMesh)
+
+        const u = i / numSpheres
+        console.log(u)
+        const sphereMat = new THREE.MeshPhongMaterial()
+        sphereMat.color.setHSL(u, 1, .75)
+        const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat)
+        sphereMesh.position.set(0, sphereRadius + 2, 0)
+        base.add(sphereMesh)
+
+        sphereShadowBases.push({ base, sphereMesh, shadowMesh, y: sphereMesh.position.y })
     }
 }
+console.log(sphereShadowBases)
 
 /**
  * Renderer
@@ -123,21 +133,47 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 /**
  * Lighting
  */
+// Hemi Light
 {
-    scene.add(new THREE.DirectionalLight(0xccc, 1))
+    const skyColor = 0xB1E1FF;
+    const groundColor = 0xB97A20;
+    const intensity = .8;
+    const light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+    scene.add(light);
 }
 
+// Dir Light
+{
+    const color = 0xFFFFFF;
+    const intensity = .5;
+    const light = new THREE.DirectionalLight(color, intensity);
+    light.position.set(0, 10, 5);
+    light.target.position.set(-5, 0, 0);
+    scene.add(light);
+    scene.add(light.target);
+}
 /**
  * Animate
  */
 const clock = new THREE.Clock()
 let lastElapsedTime = 0
 
-const tick = () =>
-{
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - lastElapsedTime
     lastElapsedTime = elapsedTime
+
+    sphereShadowBases.forEach((sphereShadowBase, ndx) => {
+        const { base, sphereMesh, shadowMesh, y } = sphereShadowBase
+
+        const u = ndx / sphereShadowBases.length;
+        
+        const speed = elapsedTime * 0.2
+        const angle = speed + u * Math.PI * 2 * (ndx % 1 ? 1 : -1)
+        const radius = Math.sin(speed - ndx * 110)
+        console.log(radius)
+        base.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius)
+    })
 
     // Update controls
     controls.update()
